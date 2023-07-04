@@ -16,7 +16,6 @@ export default class CandidatesController{
     }
 
     public async getbyid(req: Request, res: Response) {
-      
         try {
             const Candidates = await candidatesmodel.findById({ _id: req.params.id})
             res.status(200).json(Candidates)

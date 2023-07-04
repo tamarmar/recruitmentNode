@@ -6,8 +6,11 @@ export interface ICandidates {
     jobId:ObjectId;
     rating:number;
     cognitiveTest?:boolean;
-    personalityTest?:boolean
-    ReliabilityTest?:boolean
+    personalityTest?:boolean;
+    ReliabilityTest?:boolean;
+    interview?:boolean;
+    task?:boolean;
+    screeningCall?:boolean;
   }
 
   const candidatesSchema = new Schema<ICandidates>({
@@ -17,7 +20,10 @@ export interface ICandidates {
     rating: { type: Number, required: true },
     cognitiveTest: {type:Boolean},
     personalityTest: {type:Boolean},
-    ReliabilityTest: {type:Boolean}
+    ReliabilityTest: {type:Boolean},
+    interview: {type:Boolean},
+    task: {type:Boolean},
+    screeningCall: {type:Boolean}
   });
 
   export default mongoose.model<ICandidates>("candidatesModel", candidatesSchema);

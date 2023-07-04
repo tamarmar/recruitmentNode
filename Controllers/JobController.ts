@@ -1,9 +1,11 @@
-import { model } from "mongoose";
+import { model,ObjectId } from "mongoose";
 import JobsModel, { IJob } from "../Models/JobsModel"
 import * as mongoose from 'mongoose';
 import { Request, Response } from 'express';
+import candidatesModel, { ICandidates } from "../Models/candidatesModel";
 
 const job = model<IJob>('jobs', JobsModel.schema);
+const candidateModel = model<ICandidates>('candidates', candidatesModel.schema);
 
 export default class JobController{
     public async getJobs (req: Request, res: Response) {           
@@ -61,6 +63,48 @@ export default class JobController{
             res.status(400).json({message: e.message});
         }
     }
-
-    
+    public async getCalculatedJobs (req: Request, res: Response) {           
+        try {
+            const jobs = await job.find();
+            if(jobs){
+                const dataIntegration: any = [];
+                await Promise.all(
+                    jobs.map(async (job) => {
+                        const candidate = await candidateModel.find({jobId: job._id});
+                        const data = {
+                            jobId: job._id,
+                            name: job.name,
+                            JobDesc:job.JobDesc,
+                            place:job.place,
+                            status: job.status,
+                            total: 0,
+                            interview: 0,
+                            screeningCall: 0,
+                            task: 0,
+                            logo:job.logo
+                        };
+                        if(candidate){
+                            candidate.map((c)=> {
+                                data.total ++;
+                                if(c.interview == true || c.interview == false){
+                                    data.interview ++;
+                                }
+                                if(c.screeningCall == true || c.screeningCall == false){
+                                    data.screeningCall ++;
+                                }
+                                if(c.task == true || c.task == false){
+                                    data.task ++;
+                                }
+                            })
+                        }                        
+                        dataIntegration.push(data);
+                    })
+                )
+                return res.status(200).json(dataIntegration);
+            }
+            return res.status(404).json({message:"jobs not found"})
+        } catch (error) {
+            return res.status(404).json({ message: error });
+        }
+    }
 }

@@ -6,7 +6,7 @@ export interface IJob {
     CompanyDesc?:string;
     JobDesc:string
     demands:string;
-    date:Date;
+    date:string;
     status:boolean;
     logo?:string;
   }
@@ -17,7 +17,7 @@ export interface IJob {
     CompanyDesc:String,
     JobDesc: { type: String, required: true },
     demands: { type: String, required: true },
-    date: { type: Date, required: true },
+    date: { type: String, required: true },
     status: { type: Boolean, required: true },
     logo:String
   });
