@@ -36,12 +36,15 @@ jobs:
           # ✅ Ensure the directory exists before writing the file
           mkdir -p .github/ISSUE_TEMPLATE
           
+          # ✅ Fetch last commit authors (max 3 unique)
+          authors=$(git log -n 5 --pretty=format:'%an' | sort | uniq | head -3 | sed 's/^/  - /')
+
           # ✅ Write issue content with proper formatting
           echo "---" > .github/ISSUE_TEMPLATE/nightly-report.md
           echo "title: \"Nightly Test Failures\"" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "labels: [\"bug\", \"automated\"]" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "assignees:" >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo "  - tamarmar" >> .github/ISSUE_TEMPLATE/nightly-report.md
+          echo "$authors" >> .github/ISSUE_TEMPLATE/nightly-report.md  # Auto-assign last commit authors
           echo "---" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "## Nightly Test Failures" >> .github/ISSUE_TEMPLATE/nightly-report.md
@@ -49,6 +52,7 @@ jobs:
           echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
           cat failed-tests.log >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
+
 
       - name: Check for Failed Tests
         id: check_failed_tests
