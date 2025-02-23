@@ -76,4 +76,19 @@ jobs:
         with:
           filename: .github/ISSUE_TEMPLATE/nightly-report.md
 
+      - name: Send Slack Notification on Failure
+        if: env.TESTS_FAILED == 'true'
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "channel": "#github-notifications",
+              "username": "GitHub Actions",
+              "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: ${{ github.repository }}\n🔗 Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>\n📜 Failed Tests:\n```\n$(cat failed-tests.log)\n```",
+              "icon_emoji": ":warning:"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
 
