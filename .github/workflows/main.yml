@@ -15,22 +15,30 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: npm ci  # Uses package-lock.json for consistent dependencies
+
       - name: Run tests
         id: run_tests
+        continue-on-error: true  # Allows the pipeline to continue even if tests fail
         run: |
-          npm install
           npm install --save-dev jest
           npm test | tee test-results.log
-          # Store the test log as an env var for easy reuse
-          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
-          cat test-results.log >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Convert log into a GitHub-friendly format
+          echo "### Nightly Test Results" > issue_body.md
+          echo '```' >> issue_body.md
+          cat test-results.log >> issue_body.md
+          echo '```' >> issue_body.md
 
-      - name: Create Issue on Failure
-        if: failure()  # Only runs if a previous step fails
+      - name: Debug: Print Test Results
+        if: always()  # Run regardless of test success/failure
+        run: cat issue_body.md
+
+      - name: Create GitHub Issue on Test Failure
+        if: failure()  # Only runs if the test step fails
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: "Nightly Test Failures"
-          body: ${{ env.TEST_RESULTS }}
+          filename: issue_body.md  # Ensure the issue is created from this file
+          update_existing: true  # Updates the existing issue instead of creating duplicates
