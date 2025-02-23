@@ -53,6 +53,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          title: "Nightly Test Failures"  # 🔥 Explicitly define a title
-          body: .github/ISSUE_TEMPLATE/nightly-report.md
           filename: .github/ISSUE_TEMPLATE/nightly-report.md
