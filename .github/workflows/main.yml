@@ -31,7 +31,7 @@ jobs:
           npm test 2>&1 | tee test-results.log
 
           # ✅ Extract only failing tests
-          grep -A 10 -E '●|✕' test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
+          grep -A 10 -E "✕|FAIL" test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
 
           # ✅ Ensure the directory exists before writing the file
           mkdir -p .github/ISSUE_TEMPLATE
@@ -53,11 +53,16 @@ jobs:
       - name: Check for Failed Tests
         id: check_failed_tests
         run: |
-          if grep -q '●|✕' failed-tests.log; then
+          if grep -E "✕|FAIL" failed-tests.log; then
             echo "TESTS_FAILED=true" >> $GITHUB_ENV
+            echo "❌ Tests failed! Will create an issue."
           else
             echo "TESTS_FAILED=false" >> $GITHUB_ENV
+            echo "✅ No test failures detected."
           fi
+
+      - name: Debug - Print Failed Tests Log
+        run: cat failed-tests.log
 
       - name: Create GitHub Issue (Only If Tests Failed)
         if: env.TESTS_FAILED == 'true'  # ✅ Creates an issue only if tests failed
@@ -66,4 +71,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           filename: .github/ISSUE_TEMPLATE/nightly-report.md
+
 
