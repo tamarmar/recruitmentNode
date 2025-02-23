@@ -18,13 +18,20 @@ jobs:
       - name: Install dependencies
         run: npm ci  # Uses package-lock.json for consistent dependencies
 
+      - name: Debug Working Directory
+        run: pwd && ls -R .github
+
       - name: Run tests
         id: run_tests
         continue-on-error: true  # Allows pipeline to continue even if tests fail
         run: |
           npm install --save-dev jest
           npm test | tee test-results.log
-          # Convert log into a GitHub-friendly format
+          
+          # ✅ Ensure the directory exists before writing the file
+          mkdir -p .github/ISSUE_TEMPLATE
+          
+          # ✅ Convert log into a GitHub-friendly format
           echo "### Nightly Test Results" > .github/ISSUE_TEMPLATE/nightly-report.md
           echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
           cat test-results.log >> .github/ISSUE_TEMPLATE/nightly-report.md
