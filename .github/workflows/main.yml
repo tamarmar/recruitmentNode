@@ -36,10 +36,9 @@ jobs:
 
       - name: Create GitHub Issue on Test Failure
         if: always()  # Runs only if the test step fails
-        uses: JasonEtco/create-an-issue@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          title: "Nightly Test Failures"  # 🔥 Explicitly set the title
-          body: file://issue_body.md  # 🔥 Pass the file correctly as the body
-          update_existing: true  # Avoid duplicate issues
+        run: |
+          ISSUE_BODY=$(cat issue_body.md)
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/tamarmar/recruitmentNode/issues \
+               -d "{\"title\": \"Nightly Test Failures\", \"body\": \"${ISSUE_BODY}\"}"
