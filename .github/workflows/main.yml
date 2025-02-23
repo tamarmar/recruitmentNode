@@ -19,6 +19,7 @@ jobs:
         id: run_tests
         run: |
           npm install
+          npm install --save-dev jest
           npm test | tee test-results.log
           # Store the test log as an env var for easy reuse
           echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
