@@ -76,6 +76,19 @@ jobs:
         with:
           filename: .github/ISSUE_TEMPLATE/nightly-report.md
 
+      - name: Set Slack Message
+        run: |
+          # ✅ Read test failure logs safely
+          FAILED_TESTS=$(cat failed-tests.log | jq -Rs .)
+          echo "FAILED_TESTS=$FAILED_TESTS" >> $GITHUB_ENV
+
+          # ✅ Get last commit authors (max 3 unique GitHub usernames)
+          AUTHORS=$(git log -n 5 --pretty=format:'%an <%ae>' | sort | uniq | head -3)
+          MENTIONS=$(echo "$AUTHORS" | awk -F' ' '{print "<@" $1 ">"}' | paste -sd ' ' -)
+          
+          # ✅ Save mentions as an env variable
+          echo "MENTIONS=$MENTIONS" >> $GITHUB_ENV
+
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
@@ -84,11 +97,12 @@ jobs:
             {
               "channel": "#github-notifications",
               "username": "GitHub Actions",
-              "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: ${{ github.repository }}\n🔗 Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>\n📜 Failed Tests:\n```\n$(cat failed-tests.log)\n```",
+              "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: ${{ github.repository }}\n🔗 Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>\n📜 Failed Tests:\n```json\n${{ env.FAILED_TESTS }}\n```\n👥 Mentioning: ${{ env.MENTIONS }}",
               "icon_emoji": ":warning:"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
 
 
 
