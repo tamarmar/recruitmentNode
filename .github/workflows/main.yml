@@ -30,6 +30,9 @@ jobs:
           # ✅ Run tests and capture both stdout and stderr
           npm test 2>&1 | tee test-results.log
 
+          # ✅ Extract only failing tests
+          grep -A 10 -E '●|✕' test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
+
           # ✅ Ensure the directory exists before writing the file
           mkdir -p .github/ISSUE_TEMPLATE
           
@@ -41,25 +44,26 @@ jobs:
           echo "  - tamarmar" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "---" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "" >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo "## Nightly Test Results" >> .github/ISSUE_TEMPLATE/nightly-report.md
+          echo "## Nightly Test Failures" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
-          cat test-results.log >> .github/ISSUE_TEMPLATE/nightly-report.md
+          cat failed-tests.log >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
 
-
-      - name: Debug Print Test Results
-        if: always()  # Ensures it runs regardless of test results
-        run: cat .github/ISSUE_TEMPLATE/nightly-report.md
-      
-      - name: Debug - Check if Report File Exists
+      - name: Check for Failed Tests
+        id: check_failed_tests
         run: |
-          ls -lah .github/ISSUE_TEMPLATE/
-          cat .github/ISSUE_TEMPLATE/nightly-report.md
+          if grep -q '●|✕' failed-tests.log; then
+            echo "TESTS_FAILED=true" >> $GITHUB_ENV
+          else
+            echo "TESTS_FAILED=false" >> $GITHUB_ENV
+          fi
 
-      - name: Create GitHub Issue
+      - name: Create GitHub Issue (Only If Tests Failed)
+        if: env.TESTS_FAILED == 'true'  # ✅ Creates an issue only if tests failed
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           filename: .github/ISSUE_TEMPLATE/nightly-report.md
+
