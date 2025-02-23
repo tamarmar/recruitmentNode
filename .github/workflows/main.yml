@@ -20,7 +20,7 @@ jobs:
 
       - name: Run tests
         id: run_tests
-        continue-on-error: true  # Allows the pipeline to continue even if tests fail
+        continue-on-error: true  # Allows pipeline to continue even if tests fail
         run: |
           npm install --save-dev jest
           npm test | tee test-results.log
@@ -31,14 +31,14 @@ jobs:
           echo '```' >> issue_body.md
 
       - name: Debug: Print Test Results
-        if: always()  # Run regardless of test success/failure
+        if: always()  # Ensure this runs even if tests fail
         run: cat issue_body.md
 
       - name: Create GitHub Issue on Test Failure
-        if: failure()  # Only runs if the test step fails
+        if: failure()  # Runs only if the test step fails
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          filename: issue_body.md  # Ensure the issue is created from this file
-          update_existing: true  # Updates the existing issue instead of creating duplicates
+          filename: issue_body.md
+          update_existing: true  # Prevent duplicate issues
