@@ -38,7 +38,7 @@ jobs:
           echo "title: \"Nightly Test Failures\"" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "labels: [\"bug\", \"automated\"]" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "assignees:" >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo "  - your-github-username" >> .github/ISSUE_TEMPLATE/nightly-report.md
+          echo "  - tamarmar" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "---" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "" >> .github/ISSUE_TEMPLATE/nightly-report.md
           echo "## Nightly Test Results" >> .github/ISSUE_TEMPLATE/nightly-report.md
