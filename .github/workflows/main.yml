@@ -31,13 +31,22 @@ jobs:
           # ✅ Ensure the directory exists before writing the file
           mkdir -p .github/ISSUE_TEMPLATE
           
-          # ✅ Add a proper issue title at the top of the file
-          echo "Nightly Test Failures" > .github/ISSUE_TEMPLATE/nightly-report.md
-          echo "" >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo "### Test Results" >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
-          cat test-results.log >> .github/ISSUE_TEMPLATE/nightly-report.md
-          echo '```' >> .github/ISSUE_TEMPLATE/nightly-report.md
+          # ✅ Correct issue format with YAML front matter
+          cat <<EOT > .github/ISSUE_TEMPLATE/nightly-report.md
+          ---
+          title: "Nightly Test Failures"
+          labels: ["bug", "automated"]
+          assignees:
+            - your-github-username
+          ---
+          
+          ## Nightly Test Results
+          
+          \`\`\`
+          $(cat test-results.log)
+          \`\`\`
+          EOT
+
 
       - name: Debug Print Test Results
         if: always()  # Ensures it runs regardless of test results
