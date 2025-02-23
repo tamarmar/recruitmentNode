@@ -32,7 +32,7 @@ jobs:
 
       - name: Debug Print Test Results
         if: always()  # Ensures it runs regardless of test results
-        run: cat issue_body.md
+        run: cat .github/ISSUE_TEMPLATE/nightly-report.md
       - name: Create GitHub Issue
         uses: JasonEtco/create-an-issue@v2
         env:
