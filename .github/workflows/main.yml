@@ -37,7 +37,7 @@ jobs:
           title: "Nightly Test Failures"
           labels: ["bug", "automated"]
           assignees:
-            - your-github-username
+            - tamarmar
           ---
           
           ## Nightly Test Results
