@@ -1,0 +1,35 @@
+name: Nightly Notification
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test_and_create_issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          npm install
+          npm test | tee test-results.log
+          # Store the test log as an env var for easy reuse
+          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
+          cat test-results.log >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create Issue on Failure
+        if: failure()  # Only runs if a previous step fails
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: "Nightly Test Failures"
+          body: ${{ env.TEST_RESULTS }}
