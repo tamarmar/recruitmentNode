@@ -49,3 +49,4 @@ jobs:
         with:
           title: "Nightly Test Failures"  # 🔥 Explicitly define a title
           body: file://.github/ISSUE_TEMPLATE/nightly-report.md
+          filename: file://.github/ISSUE_TEMPLATE/nightly-report.md
