@@ -40,5 +40,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          filename: issue_body.md  # 🔥 Ensure this points to the correct file
-          update_existing: true  # Prevent duplicate issues
+          title: "Nightly Test Failures"  # 🔥 Explicitly set the title
+          body: file://issue_body.md  # 🔥 Pass the file correctly as the body
+          update_existing: true  # Avoid duplicate issues
