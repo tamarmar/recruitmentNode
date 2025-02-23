@@ -42,11 +42,17 @@ jobs:
       - name: Debug Print Test Results
         if: always()  # Ensures it runs regardless of test results
         run: cat .github/ISSUE_TEMPLATE/nightly-report.md
+      
+      - name: Debug - Check if Report File Exists
+        run: |
+          ls -lah .github/ISSUE_TEMPLATE/
+          cat .github/ISSUE_TEMPLATE/nightly-report.md
+
       - name: Create GitHub Issue
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           title: "Nightly Test Failures"  # 🔥 Explicitly define a title
-          body: file://.github/ISSUE_TEMPLATE/nightly-report.md
-          filename: file://.github/ISSUE_TEMPLATE/nightly-report.md
+          body: .github/ISSUE_TEMPLATE/nightly-report.md
+          filename: .github/ISSUE_TEMPLATE/nightly-report.md
