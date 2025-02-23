@@ -78,14 +78,14 @@ jobs:
 
       - name: Set Slack Message
         run: |
-          # ✅ Read test failure logs safely
-          FAILED_TESTS=$(cat failed-tests.log | jq -Rs .)
+          # ✅ Read and escape test failure logs for JSON safety
+          FAILED_TESTS=$(jq -Rs . < failed-tests.log)
           echo "FAILED_TESTS=$FAILED_TESTS" >> $GITHUB_ENV
 
           # ✅ Get last commit authors (max 3 unique GitHub usernames)
-          AUTHORS=$(git log -n 5 --pretty=format:'%an <%ae>' | sort | uniq | head -3)
-          MENTIONS=$(echo "$AUTHORS" | awk -F' ' '{print "<@" $1 ">"}' | paste -sd ' ' -)
-          
+          AUTHORS=$(git log -n 5 --pretty=format:'%ae' | sort | uniq | head -3)
+          MENTIONS=$(echo "$AUTHORS" | awk '{print "<@" $1 ">"}' | paste -sd ' ' -)
+
           # ✅ Save mentions as an env variable
           echo "MENTIONS=$MENTIONS" >> $GITHUB_ENV
 
@@ -102,7 +102,3 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-
-
-
