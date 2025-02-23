@@ -30,8 +30,8 @@ jobs:
           cat test-results.log >> issue_body.md
           echo '```' >> issue_body.md
 
-      - name: Debug: Print Test Results
-        if: always()  # Ensure this runs even if tests fail
+      - name: Debug Print Test Results
+        if: always()  # Ensures it runs regardless of test results
         run: cat issue_body.md
 
       - name: Create GitHub Issue on Test Failure
