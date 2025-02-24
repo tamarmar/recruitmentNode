@@ -94,16 +94,28 @@ jobs:
           # ✅ Save mentions as an env variable
           echo "MENTIONS=$MENTIONS" >> $GITHUB_ENV
 
+      - name: Prepare Slack Payload
+        run: |
+          # Escape the test failures into a JSON-safe string:
+          ESCAPED_TESTS=$(jq -Rs . < failed-tests.log)
+      
+          # Build a valid JSON object *in a shell variable*
+          cat <<EOF > slack-payload.json
+          {
+            "channel": "#github-notifications",
+            "username": "GitHub Actions",
+            "icon_emoji": ":warning:",
+            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n📜 Failed Tests:\n\`\`\`json\n${ESCAPED_TESTS}\n\`\`\`"
+          }
+          EOF
+          # Now store it in an env variable if you wish
+          echo "SLACK_PAYLOAD=$(cat slack-payload.json | jq -Rs .)" >> $GITHUB_ENV
+      
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          payload: |
-            {
-              "channel": "#github-notifications",
-              "username": "GitHub Actions",
-              "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: ${{ github.repository }}\n🔗 Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>\n📜 Failed Tests:\n```json\n${{ env.FAILED_TESTS }}\n```\n👥 Mentioning: ${{ env.MENTIONS }}",
-              "icon_emoji": ":warning:"
-            }
+          # We have a properly escaped JSON payload now
+          payload: ${{ fromJson(env.SLACK_PAYLOAD) }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
