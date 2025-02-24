@@ -96,32 +96,39 @@ jobs:
 
       - name: Prepare Slack Payload
         run: |
-          # Escape the test failures into a JSON-safe string:
-          ESCAPED_TESTS=$(jq -Rs . < failed-tests.log)
+          # 1) Read failed-tests.log into a variable
+          LOG_CONTENT="$(cat failed-tests.log)"
       
-          # Build a valid JSON object *in a shell variable*
+          # 2) Escape it safely as a JSON string using jq
+          #    -R  = read raw text
+          #    -s  = read in one single string
+          #    (this produces a properly quoted JSON string, e.g. "FAIL test...\n")
+          ESCAPED_LOG=$(printf %s "$LOG_CONTENT" | jq -R -s '.')
+      
+          # 3) Build valid JSON for Slack in a file.
+          #    Notice the "text" field: we just use the JSON string in $ESCAPED_LOG.
+          #    - We remove extra quotes around it by placing it directly (no quotes).
           cat <<EOF > slack-payload.json
           {
             "channel": "#github-notifications",
             "username": "GitHub Actions",
             "icon_emoji": ":warning:",
-            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n📜 Failed Tests:\n\`\`\`json\n${ESCAPED_TESTS}\n\`\`\`"
+            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n📜 Failed Tests:\n\`\`\`json\n${LOG_CONTENT}\n\`\`\`"
           }
           EOF
-          # Now store it in an env variable if you wish
-          echo "SLACK_PAYLOAD=$(cat slack-payload.json | jq -Rs .)" >> $GITHUB_ENV
+      
+          # Double-check it's valid JSON (optional)
+          jq . slack-payload.json
+      
+          # 4) Store the file’s contents (the valid JSON object) in an environment variable
+          #    BUT do *not* quote it again—just compress it into one line with jq -c
+          echo "SLACK_PAYLOAD=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
       
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          payload: |
-            {
-              "channel": "#github-notifications",
-              "username": "GitHub Actions",
-              "icon_emoji": ":warning:",
-              "text": ${env.FAILED_TESTS}  # <--- NOTICE: no surrounding quotes
-            }
+          # This means "take the SLACK_PAYLOAD variable (a JSON string) and parse it into an object."
+          payload: ${{ fromJson(env.SLACK_PAYLOAD) }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          FAILED_TESTS: ${{ env.FAILED_TESTS }}
