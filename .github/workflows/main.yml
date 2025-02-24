@@ -115,7 +115,13 @@ jobs:
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          # We have a properly escaped JSON payload now
-          payload: ${{ fromJson(env.SLACK_PAYLOAD) }}
+          payload: |
+            {
+              "channel": "#github-notifications",
+              "username": "GitHub Actions",
+              "icon_emoji": ":warning:",
+              "text": ${env.FAILED_TESTS}  # <--- NOTICE: no surrounding quotes
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          FAILED_TESTS: ${{ env.FAILED_TESTS }}
