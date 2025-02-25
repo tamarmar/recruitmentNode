@@ -24,22 +24,21 @@ jobs:
       - name: Run tests
         run: |
           npm install --save-dev jest
-      
-          # 1) Run tests (they may emit color codes or other control chars)
-          npm test 2>&1 | tee test-results-raw.log
-      
-          # 2) Remove ANSI color codes:
+          
+          # Run tests with no ANSI color
+          FORCE_COLOR=0 npm test 2>&1 | tee test-results-raw.log
+          
+          # Remove ANSI codes (just in case anything still sneaks in)
           sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' test-results-raw.log > no-color.log
       
-          # 3) Remove *all* remaining control chars (except newlines):
-          #    This strips characters in the range U+0000–U+001F, except tab (0x09) and newline (0x0A).
-          #    If you want to remove tabs too, include \011 in the range.
+          # Remove *all* control characters in the U+0000–U+001F range, except linefeeds (0x0A).
+          # If you want to keep tabs (0x09), skip it. This example *also* removes carriage returns (0x0D).
           tr -d '\000-\010\013-\037' < no-color.log > test-results.log
       
-          # 4) (Optional) Print the final cleaned log for verification
+          # (Optional) Print the final cleaned log to verify
           cat test-results.log
       
-          # Then proceed with your existing "grep -A 10 ..." etc.
+          # Extract only failing tests to failed-tests.log
           grep -A 10 -E "✕|FAIL" test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
 
           # ✅ Ensure the directory exists before writing the file
@@ -105,18 +104,10 @@ jobs:
 
       - name: Prepare Slack Payload
         run: |
-          # 1) Read failed-tests.log into a variable
+          # 1) Read the cleaned failed-tests.log
           LOG_CONTENT="$(cat failed-tests.log)"
       
-          # 2) Escape it safely as a JSON string using jq
-          #    -R  = read raw text
-          #    -s  = read in one single string
-          #    (this produces a properly quoted JSON string, e.g. "FAIL test...\n")
-          ESCAPED_LOG=$(printf %s "$LOG_CONTENT" | jq -R -s '.')
-      
-          # 3) Build valid JSON for Slack in a file.
-          #    Notice the "text" field: we just use the JSON string in $ESCAPED_LOG.
-          #    - We remove extra quotes around it by placing it directly (no quotes).
+          # 2) Create valid JSON for Slack
           cat <<EOF > slack-payload.json
           {
             "channel": "#github-notifications",
@@ -126,18 +117,16 @@ jobs:
           }
           EOF
       
-          # Double-check it's valid JSON (optional)
+          # 3) Confirm it's valid JSON
           jq . slack-payload.json
       
-          # 4) Store the file’s contents (the valid JSON object) in an environment variable
-          #    BUT do *not* quote it again—just compress it into one line with jq -c
+          # 4) Store a compressed one-line JSON string in SLACK_PAYLOAD
           echo "SLACK_PAYLOAD=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
-      
+            
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          # This means "take the SLACK_PAYLOAD variable (a JSON string) and parse it into an object."
           payload: ${{ fromJson(env.SLACK_PAYLOAD) }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
