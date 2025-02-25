@@ -25,22 +25,19 @@ jobs:
         run: |
           npm install --save-dev jest
           
-          # Run tests with no ANSI color
-          FORCE_COLOR=0 npm test 2>&1 | tee test-results-raw.log
+          # Run tests
+          FORCE_COLOR=0 npm test 2>&1 | tee test-results.log
           
-          # Remove ANSI codes (just in case anything still sneaks in)
-          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' test-results-raw.log > no-color.log
+          # Make a *short* log with lines that actually say "FAIL" or "✕"
+          grep -E "FAIL|✕" test-results.log > short-failed.log || echo "No failing lines found" > short-failed.log
       
-          # Remove *all* control characters in the U+0000–U+001F range, except linefeeds (0x0A).
-          # If you want to keep tabs (0x09), skip it. This example *also* removes carriage returns (0x0D).
-          tr -d '\000-\010\013-\037' < no-color.log > test-results.log
+          # If needed, also remove ANSI codes from short-failed.log:
+          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' short-failed.log > short-cleaned.log
+          # Or remove all control chars (0x00–0x1F except newline):
+          tr -d '\000-\010\013-\037' < short-cleaned.log > short-failed.log
       
-          # (Optional) Print the final cleaned log to verify
-          cat test-results.log
+          # short-failed.log now has a minimal snippet of the failures
       
-          # Extract only failing tests to failed-tests.log
-          grep -A 10 -E "✕|FAIL" test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
-
           # ✅ Ensure the directory exists before writing the file
           mkdir -p .github/ISSUE_TEMPLATE
           
@@ -104,25 +101,23 @@ jobs:
 
       - name: Prepare Slack Payload
         run: |
-          # 1) Read the cleaned failed-tests.log
-          LOG_CONTENT="$(cat failed-tests.log)"
+          # Read just the short lines
+          SHORT_FAILS="$(cat short-failed.log)"
       
-          # 2) Create valid JSON for Slack
+          # Build JSON for Slack
           cat <<EOF > slack-payload.json
           {
             "channel": "#github-notifications",
             "username": "GitHub Actions",
             "icon_emoji": ":warning:",
-            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n📜 Failed Tests:\n\`\`\`json\n${LOG_CONTENT}\n\`\`\`"
+            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n\n*Failing Lines:*\n\`\`\`\n${SHORT_FAILS}\n\`\`\`"
           }
           EOF
       
-          # 3) Confirm it's valid JSON
+          # Validate JSON & store
           jq . slack-payload.json
-      
-          # 4) Store a compressed one-line JSON string in SLACK_PAYLOAD
           echo "SLACK_PAYLOAD=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
-            
+      
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
