@@ -28,7 +28,7 @@ jobs:
           npm install --save-dev jest
           
           # ✅ Run tests and capture both stdout and stderr
-          npx jest --color=false 2>&1 | tee test-results.log
+          FORCE_COLOR=0 npm test 2>&1 | tee test-results.log
 
           # ✅ Extract only failing tests
           grep -A 10 -E "✕|FAIL" test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
