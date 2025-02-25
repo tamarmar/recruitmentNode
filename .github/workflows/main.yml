@@ -20,6 +20,16 @@ jobs:
 
       - name: Debug Working Directory
         run: pwd && ls -R .github
+        
+      - name: Extract failing tests
+        run: |
+          # If grep finds any matches, it writes them to failed-tests.log
+          if grep -A 10 -E "✕|FAIL" test-results.log > tmp-failed.log; then
+            mv tmp-failed.log failed-tests.log
+          else
+            # If no match, still create failed-tests.log so there's no "No such file" error
+            echo "No failed tests" > failed-tests.log
+          fi
 
       - name: Run tests
         run: |
