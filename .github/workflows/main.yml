@@ -31,6 +31,11 @@ jobs:
             echo "No failed tests" > failed-tests.log
           fi
 
+      - name: Install dos2unix
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dos2unix
+
       - name: Run tests
         run: |
           npm install --save-dev jest
