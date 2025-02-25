@@ -149,12 +149,13 @@ jobs:
           # Validate & store the Slack JSON
           jq . slack-payload.json
           echo "SLACK_PAYLOAD=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
+          echo "SLACK_PAYLOAD_JSON=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
 
       
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          payload: ${{ fromJson(env.SLACK_PAYLOAD) }}
+          payload: ${{ env.SLACK_PAYLOAD_JSON }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
