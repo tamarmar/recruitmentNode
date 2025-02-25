@@ -117,22 +117,32 @@ jobs:
 
       - name: Prepare Slack Payload
         run: |
-          # Read just the short lines
+          # Make sure short-failed.log is cleaned of control characters
+          # (you already do sed and tr, so this is just a reminder)
+          # tr -d '\000-\010\013-\037' < short-failed.log > short-failed-cleaned.log || true
+
+          # Capture the cleaned short-failed.log contents
           SHORT_FAILS="$(cat short-failed.log)"
-      
-          # Build JSON for Slack
-          cat <<EOF > slack-payload.json
-          {
-            "channel": "#github-notifications",
-            "username": "GitHub Actions",
-            "icon_emoji": ":warning:",
-            "text": "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: $GITHUB_REPOSITORY\n🔗 Run: <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}>\n\n*Failing Lines:*\n\`\`\`\n${SHORT_FAILS}\n\`\`\`"
-          }
-          EOF
-      
-          # Validate JSON & store
+
+          # Let jq build the JSON so everything is properly escaped
+          jq -n \
+            --arg channel "#github-notifications" \
+            --arg username "GitHub Actions" \
+            --arg icon_emoji ":warning:" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg run_url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --arg shortfails "$SHORT_FAILS" \
+            '{
+              channel: $channel,
+              username: $username,
+              icon_emoji: $icon_emoji,
+              text: "🚨 *Test Failures Detected!* 🚨\n\n🔴 Repository: \($repo)\n🔗 Run: <\($run_url)>\n\n*Failing Lines:*\n```\n\($shortfails)\n```"
+            }' > slack-payload.json
+
+          # Validate & store the Slack JSON
           jq . slack-payload.json
           echo "SLACK_PAYLOAD=$(jq -c . slack-payload.json)" >> $GITHUB_ENV
+
       
       - name: Send Slack Notification on Failure
         if: env.TESTS_FAILED == 'true'
