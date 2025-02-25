@@ -22,15 +22,24 @@ jobs:
         run: pwd && ls -R .github
 
       - name: Run tests
-        id: run_tests
-        continue-on-error: true
         run: |
           npm install --save-dev jest
-          
-          # ✅ Run tests and capture both stdout and stderr
-          FORCE_COLOR=0 npm test 2>&1 | tee test-results.log
-
-          # ✅ Extract only failing tests
+      
+          # 1) Run tests (they may emit color codes or other control chars)
+          npm test 2>&1 | tee test-results-raw.log
+      
+          # 2) Remove ANSI color codes:
+          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' test-results-raw.log > no-color.log
+      
+          # 3) Remove *all* remaining control chars (except newlines):
+          #    This strips characters in the range U+0000–U+001F, except tab (0x09) and newline (0x0A).
+          #    If you want to remove tabs too, include \011 in the range.
+          tr -d '\000-\010\013-\037' < no-color.log > test-results.log
+      
+          # 4) (Optional) Print the final cleaned log for verification
+          cat test-results.log
+      
+          # Then proceed with your existing "grep -A 10 ..." etc.
           grep -A 10 -E "✕|FAIL" test-results.log > failed-tests.log || echo "No failed tests" > failed-tests.log
 
           # ✅ Ensure the directory exists before writing the file
