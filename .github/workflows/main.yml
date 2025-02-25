@@ -42,7 +42,14 @@ jobs:
           
           # Run tests
           FORCE_COLOR=0 npm test 2>&1 | tee test-results.log
-          
+
+          if [ -f test-results.log ]; then
+            grep -A 10 -E "✕|FAIL" test-results.log > tmp-failed.log || true
+            mv tmp-failed.log failed-tests.log
+          else
+            echo "No failed tests" > failed-tests.log
+          fi
+
           # Make a *short* log with lines that actually say "FAIL" or "✕"
           grep -E "FAIL|✕" test-results.log > short-failed.log || echo "No failing lines found" > short-failed.log
           dos2unix short-failed.log
@@ -78,7 +85,7 @@ jobs:
       - name: Check for Failed Tests
         id: check_failed_tests
         run: |
-          if grep -E "✕|FAIL" failed-tests.log; then
+          if [ -s failed-tests.log ] && grep -qE "✕|FAIL" failed-tests.log; then
             echo "TESTS_FAILED=true" >> $GITHUB_ENV
             echo "❌ Tests failed! Will create an issue."
           else
