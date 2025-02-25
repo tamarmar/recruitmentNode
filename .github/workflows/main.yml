@@ -40,7 +40,8 @@ jobs:
           
           # Make a *short* log with lines that actually say "FAIL" or "✕"
           grep -E "FAIL|✕" test-results.log > short-failed.log || echo "No failing lines found" > short-failed.log
-      
+          dos2unix short-failed.log
+          
           # If needed, also remove ANSI codes from short-failed.log:
           sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' short-failed.log > short-cleaned.log
           # Or remove all control chars (0x00–0x1F except newline):
