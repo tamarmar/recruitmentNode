@@ -106,7 +106,7 @@ jobs:
 
       - name: Prepare Slack Payload
         run: |
-          SHORT_FAILS=$(cat short-failed-cleaned.log)
+          SHORT_FAILS=$(cat short-failed.log)
           jq -n \
             --arg channel "#github-notifications" \
             --arg username "GitHub Actions" \
